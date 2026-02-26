@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chrono Piste Pro - Équipe</title>
+    <style>
+        :root {
+            --bg-color: #0b1120;
+            --card-bg: #1e293b;
+            --primary: #3b82f6; 
+            --accent: #10b981; 
+            --danger: #ef4444;
+            --text-main: #f8fafc;
+            --text-muted: #64748b;
+            --highlight: #fbbf24; 
+            --completed-bg: #0f172a;
+        }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, sans-serif; 
+            text-align: center; 
+            background-color: var(--bg-color); 
+            color: var(--text-main); 
+            margin: 0; 
+            padding: 10px; 
+            -webkit-font-smoothing: antialiased;
+        }
+
+        h1 { margin: 5px 0 15px 0; font-size: 1.2em; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 2px;}
+        
+        .timer-container {
+            background: linear-gradient(145deg, #162032, #0b1120);
+            border-radius: 20px;
+            padding: 20px 10px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+            margin-bottom: 20px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            border: 1px solid rgba(255,255,255,0.05);
+            position: sticky;
+            top: 5px;
+            z-index: 100;
+        }
+
+        #display { 
+            font-size: 4.2em; 
+            font-weight: 800; 
+            font-variant-numeric: tabular-nums; 
+            margin: 0; 
+            color: var(--text-main);
+            text-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            letter-spacing: -1px;
+        }
+
+        .config-container {
+            max-width: 600px;
+            margin: 0 auto 15px auto;
+            display: flex;
+            gap: 10px;
+        }
+        
+        select, .btn-action {
+            background-color: var(--card-bg);
+            color: var(--primary);
+            border: 1px solid #334155;
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 0.95em;
+            font-weight: 700;
+            flex: 1;
+            cursor: pointer;
+            outline: none;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .btn-action.add-btn { background-color: #4f46e5; color: white; border: none; }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .controls button { 
+            font-size: 1.1em; 
+            font-weight: 800;
+            padding: 16px 0; 
+            flex: 1;
+            border: none; 
+            border-radius: 14px; 
+            cursor: pointer; 
+            color: white; 
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.25);
+        }
+        .controls button:disabled { filter: grayscale(1); opacity: 0.4; cursor: not-allowed; box-shadow: none;}
+
+        #startBtn { background-color: var(--accent); }
+        #resetBtn { background-color: transparent; color: var(--danger); border: 2px solid #334155; box-shadow: none;}
+
+        /* Cartes Coureurs */
+        #runnersContainer {
+            max-width: 600px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .runner-card {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            padding: 15px;
+            border-left: 5px solid var(--primary);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            text-align: left;
+            transition: all 0.3s ease;
+        }
+        
+        .runner-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .runner-name {
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            font-size: 1.3em;
+            font-weight: 800;
+            width: 50%;
+            border-bottom: 1px dashed #444;
+            outline: none;
+        }
+        .runner-name:focus { border-bottom: 1px solid var(--primary); }
+        
+        .runner-proj {
+            font-size: 1em;
+            color: var(--accent);
+            font-weight: 700;
+            background: rgba(16, 185, 129, 0.1);
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+
+        .split-btn {
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary), #1e40af);
+            padding: 22px 0;
+            font-size: 1.5em;
+            font-weight: 800;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+            transition: transform 0.1s;
+        }
+        .split-btn:active { transform: scale(0.97); }
+        .split-btn:disabled { background: #334155; color: #94a3b8; box-shadow: none; cursor: not-allowed; }
+
+        /* Bouton pour afficher/cacher la grille */
+        .toggle-btn {
+            background: transparent;
+            color: var(--text-muted);
+            border: none;
+            width: 100%;
+            padding: 8px 0;
+            font-size: 0.75em;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+            outline: none;
+        }
+
+        /* Grille Compacte */
+        .mini-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+        }
+        
+        .mini-card {
+            background-color: #162032;
+            padding: 8px 4px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        
+        .mini-card.completed {
+            background-color: var(--completed-bg);
+            border-color: #1e293b;
+            opacity: 0.35;
+        }
+        
+        .mini-card.next-target {
+            background-color: #283548;
+            border-color: var(--highlight);
+            box-shadow: 0 0 10px rgba(251, 191, 36, 0.15);
+            transform: translateY(-2px);
+        }
+        
+        .mini-card.next-target .m-dist { color: var(--highlight); }
+        .mini-card.next-target .m-pace { color: #fff; }
+        
+        .m-dist { font-size: 0.75em; color: var(--text-muted); font-weight: 700; display: block; margin-bottom: 2px;}
+        .m-pace { font-size: 1.1em; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--text-muted); }
+
+        #masterLogContainer {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            padding: 15px;
+            display: none;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        #masterLogContainer h3 { margin: 0 0 15px 0; font-size: 1.1em; color: var(--text-main); text-align: left; border-bottom: 1px solid #334155; padding-bottom: 8px;}
+        table { width: 100%; border-collapse: collapse; font-size: 0.85em; text-align: center; margin-bottom: 15px; }
+        th { color: var(--text-muted); padding: 8px 2px; font-weight: 700; border-bottom: 2px solid #334155; text-transform: uppercase;}
+        td { padding: 10px 2px; border-bottom: 1px solid #334155; font-variant-numeric: tabular-nums; font-weight: 600;}
+        tr:last-child td { border-bottom: none; }
+        .log-name { color: var(--text-main); font-weight: 700; }
+        .log-lap { color: var(--highlight); }
+        .log-pace { color: var(--accent); }
+
+        #exportBtn {
+            background-color: transparent;
+            color: var(--text-main);
+            border: 2px solid #475569;
+            font-size: 0.95em;
+            padding: 14px;
+            width: 100%;
+            border-radius: 12px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="timer-container">
+        <h1>Chrono Équipe</h1>
+        <div id="display">00:00.00</div>
+    </div>
+
+    <div class="config-container">
+        <select id="splitDistConfig">
+            <option value="200" selected>Split: 200m</option>
+            <option value="400">Split: 400m</option>
+            <option value="800">Split: 800m</option>
+            <option value="1000">Split: 1000m</option>
+        </select>
+        <select id="targetDistConfig" onchange="buildAllGrids()">
+            <option value="800">Obj: 800m</option>
+            <option value="1200">Obj: 1200m</option>
+            <option value="1500" selected>Obj: 1500m</option>
+            <option value="2000">Obj: 2000m</option>
+            <option value="3000">Obj: 3000m</option>
+            <option value="5000">Obj: 5000m</option>
+        </select>
+    </div>
+    
+    <div class="config-container">
+        <button class="btn-action add-btn" onclick="addRunner()">+ Ajouter un Coureur</button>
+    </div>
+
+    <div class="controls">
+        <button id="startBtn" onclick="toggleTimer()">Start Clock</button>
+        <button id="resetBtn" onclick="resetTimer()">Reset Tout</button>
+    </div>
+
+    <div id="runnersContainer"></div>
+
+    <div id="masterLogContainer">
+        <h3>Journal Global</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Coureur</th>
+                    <th>Dist.</th>
+                    <th>Tour</th>
+                    <th>Allure</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody id="masterLogList"></tbody>
+        </table>
+        <button id="exportBtn" onclick="exportCSV()">Exporter en CSV</button>
+    </div>
+
+    <script>
+        let startTime = 0;
+        let elapsedTime = 0;
+        let timerInterval;
+        let isRunning = false;
+        
+        let runners = [];
+        let nextRunnerId = 1;
+        let recordedSplits = [];
+        let cachedPaceStrings = {}; 
+
+        const display = document.getElementById('display');
+        const startBtn = document.getElementById('startBtn');
+        const runnersContainer = document.getElementById('runnersContainer');
+        const masterLogContainer = document.getElementById('masterLogContainer');
+        const masterLogList = document.getElementById('masterLogList');
+        const splitDistConfig = document.getElementById('splitDistConfig');
+        const targetDistConfig = document.getElementById('targetDistConfig');
+
+        function formatTime(ms) {
+            let totalSeconds = Math.floor(ms / 1000);
+            let minutes = Math.floor(totalSeconds / 60);
+            let seconds = totalSeconds % 60;
+            let hundredths = Math.floor((ms % 1000) / 10);
+            return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${hundredths.toString().padStart(2, '0')}`;
+        }
+
+        function formatLongTime(ms) {
+            let totalSeconds = Math.floor(ms / 1000);
+            let hours = Math.floor(totalSeconds / 3600);
+            let minutes = Math.floor((totalSeconds % 3600) / 60);
+            let seconds = totalSeconds % 60;
+            if(hours > 0) return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function calculatePace(timeMs, distanceMeters) {
+            if (timeMs < 3000) return { text: "---", html: `---` }; 
+            let timeMin = timeMs / 60000;
+            let distanceKm = distanceMeters / 1000;
+            let paceDecimal = timeMin / distanceKm;
+            if (paceDecimal > 20) return { text: "---", html: `---` }; 
+            
+            let totalSeconds = Math.round(paceDecimal * 60); 
+            let paceMin = Math.floor(totalSeconds / 60);
+            let paceSec = totalSeconds % 60;
+            let paceString = `${paceMin}:${paceSec.toString().padStart(2, '0')}`;
+            return { text: paceString, html: paceString };
+        }
+
+        function addRunner() {
+            let id = nextRunnerId++;
+            runners.push({
+                id: id,
+                name: `Coureur ${id}`,
+                distanceCovered: 0,
+                lastSplitTime: 0,
+                splitCount: 0,
+                gridVisible: true 
+            });
+            renderRunners();
+        }
+
+        function renderRunners() {
+            runnersContainer.innerHTML = '';
+            
+            runners.forEach(r => {
+                let card = document.createElement('div');
+                card.className = 'runner-card';
+                
+                let gridStyle = r.gridVisible ? "display: grid;" : "display: none;";
+                let toggleText = r.gridVisible ? "▲ Cacher Allures" : "▼ Voir Allures";
+                
+                card.innerHTML = `
+                    <div class="runner-header">
+                        <input type="text" class="runner-name" value="${r.name}" onchange="updateRunnerName(${r.id}, this.value)">
+                        <div class="runner-proj" id="proj-${r.id}">Proj: --:--</div>
+                    </div>
+                    <button class="split-btn" id="btn-split-${r.id}" onclick="recordSplit(${r.id})" ${isRunning ? "" : "disabled"}>
+                        SPLIT
+                    </button>
+                    <button class="toggle-btn" id="toggle-btn-${r.id}" onclick="toggleGrid(${r.id})">${toggleText}</button>
+                    <div class="mini-grid" id="grid-${r.id}" style="${gridStyle}"></div>
+                `;
+                runnersContainer.appendChild(card);
+            });
+            buildAllGrids();
+        }
+
+        function updateRunnerName(id, newName) {
+            let r = runners.find(x => x.id === id);
+            if(r) {
+                // Met à jour le nom dans l'historique enregistré pour correspondre au nouveau nom lors de l'export
+                recordedSplits.forEach(split => {
+                    if (split.runnerName === r.name) {
+                        split.runnerName = newName;
+                    }
+                });
+                r.name = newName;
+            }
+        }
+
+        function toggleGrid(runnerId) {
+            let r = runners.find(x => x.id === runnerId);
+            if (r) {
+                r.gridVisible = !r.gridVisible;
+                let gridElement = document.getElementById(`grid-${runnerId}`);
+                let toggleBtn = document.getElementById(`toggle-btn-${runnerId}`);
+                
+                if (r.gridVisible) {
+                    gridElement.style.display = "grid";
+                    toggleBtn.innerText = "▲ Cacher Allures";
+                } else {
+                    gridElement.style.display = "none";
+                    toggleBtn.innerText = "▼ Voir Allures";
+                }
+            }
+        }
+
+        function buildAllGrids() {
+            let target = parseInt(targetDistConfig.value);
+            cachedPaceStrings = {};
+            
+            runners.forEach(r => {
+                let gridContainer = document.getElementById(`grid-${r.id}`);
+                if (!gridContainer) return;
+                
+                gridContainer.innerHTML = '';
+                for(let dist = 200; dist <= target; dist += 200) {
+                    gridContainer.innerHTML += `
+                        <div class="mini-card" id="card-${r.id}-${dist}">
+                            <span class="m-dist">${dist}</span>
+                            <span class="m-pace" id="pace-${r.id}-${dist}">0:00</span>
+                        </div>
+                    `;
+                }
+                updateGridVisuals(r.id);
+            });
+        }
+
+        function updateGridVisuals(runnerId) {
+            let r = runners.find(x => x.id === runnerId);
+            if (!r) return;
+            
+            let target = parseInt(targetDistConfig.value);
+            let splitDist = parseInt(splitDistConfig.value);
+            let nextTargetDist = r.distanceCovered + splitDist;
+
+            for(let dist = 200; dist <= target; dist += 200) {
+                let card = document.getElementById(`card-${r.id}-${dist}`);
+                if (!card) continue;
+                
+                card.classList.remove('completed', 'next-target');
+                
+                if (dist <= r.distanceCovered) {
+                    card.classList.add('completed');
+                } else if (dist > r.distanceCovered && dist <= nextTargetDist) {
+                    card.classList.add('next-target');
+                }
+            }
+        }
+
+        function updateAllPaces(timeMs) {
+            let target = parseInt(targetDistConfig.value);
+            
+            runners.forEach(r => {
+                for(let dist = 200; dist <= target; dist += 200) {
+                    if (dist > r.distanceCovered) {
+                        let newHtml = calculatePace(timeMs, dist).html;
+                        let cacheKey = `${r.id}-${dist}`;
+                        
+                        if (cachedPaceStrings[cacheKey] !== newHtml) {
+                            let paceElement = document.getElementById(`pace-${r.id}-${dist}`);
+                            if (paceElement) {
+                                paceElement.innerHTML = newHtml;
+                                cachedPaceStrings[cacheKey] = newHtml;
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateProjection(runnerId, currentTotalTime, currentTotalDist) {
+            let r = runners.find(x => x.id === runnerId);
+            let targetDist = parseInt(targetDistConfig.value);
+            let projElement = document.getElementById(`proj-${r.id}`);
+            
+            if (!projElement) return;
+
+            if (currentTotalDist >= targetDist) {
+                projElement.innerText = "Terminé";
+                projElement.style.color = "var(--text-main)";
+                projElement.style.backgroundColor = "var(--accent)";
+                return;
+            }
+            
+            let pacePerMeter = currentTotalTime / currentTotalDist;
+            let projectedTotalMs = pacePerMeter * targetDist;
+            projElement.innerText = `Proj: ${formatLongTime(projectedTotalMs)}`;
+        }
+
+        function toggleTimer() {
+            if (!isRunning) {
+                startTime = Date.now() - elapsedTime;
+                
+                timerInterval = setInterval(() => {
+                    elapsedTime = Date.now() - startTime;
+                    display.innerText = formatTime(elapsedTime);
+                    updateAllPaces(elapsedTime); 
+                }, 10); 
+                
+                startBtn.innerText = "Stop Clock";
+                startBtn.style.backgroundColor = "#fbbf24";
+                startBtn.style.color = "#000";
+                
+                splitDistConfig.disabled = true;
+                targetDistConfig.disabled = true;
+                isRunning = true;
+                
+                runners.forEach(r => {
+                    let btn = document.getElementById(`btn-split-${r.id}`);
+                    if(btn) btn.disabled = false;
+                    updateGridVisuals(r.id);
+                });
+                
+            } else {
+                clearInterval(timerInterval);
+                startBtn.innerText = "Start Clock";
+                startBtn.style.backgroundColor = "var(--accent)";
+                startBtn.style.color = "#fff";
+                
+                splitDistConfig.disabled = false;
+                targetDistConfig.disabled = false;
+                isRunning = false;
+                
+                runners.forEach(r => {
+                    let btn = document.getElementById(`btn-split-${r.id}`);
+                    if(btn) btn.disabled = true;
+                });
+            }
+        }
+
+        function recordSplit(runnerId) {
+            let r = runners.find(x => x.id === runnerId);
+            if (!r) return;
+            
+            r.splitCount++;
+            masterLogContainer.style.display = "block";
+
+            let currentTotalTime = elapsedTime;
+            let lapTime = currentTotalTime - r.lastSplitTime;
+            r.lastSplitTime = currentTotalTime;
+
+            let selectedSplitDistance = parseInt(splitDistConfig.value);
+            let lapPaceData = calculatePace(lapTime, selectedSplitDistance);
+
+            r.distanceCovered += selectedSplitDistance;
+            
+            recordedSplits.push({
+                runnerName: r.name,
+                lap: r.splitCount,
+                distance: r.distanceCovered,
+                lapTime: formatTime(lapTime),
+                pace: lapPaceData.text,
+                totalTime: formatTime(currentTotalTime)
+            });
+            
+            updateProjection(r.id, currentTotalTime, r.distanceCovered);
+            updateGridVisuals(r.id); 
+
+            let row = document.createElement("tr");
+            row.innerHTML = `
+                <td class="log-name">${r.name}</td>
+                <td>${r.distanceCovered}m</td>
+                <td class="log-lap">${formatTime(lapTime)}</td>
+                <td class="log-pace">${lapPaceData.text}</td>
+                <td>${formatTime(currentTotalTime)}</td>
+            `;
+            masterLogList.appendChild(row);
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            isRunning = false;
+            elapsedTime = 0;
+            recordedSplits = [];
+            
+            display.innerText = "00:00.00";
+            startBtn.innerText = "Start Clock";
+            startBtn.style.backgroundColor = "var(--accent)";
+            startBtn.style.color = "#fff";
+            
+            splitDistConfig.disabled = false;
+            targetDistConfig.disabled = false;
+            
+            masterLogContainer.style.display = "none";
+            masterLogList.innerHTML = "";
+            
+            runners.forEach(r => {
+                r.distanceCovered = 0;
+                r.lastSplitTime = 0;
+                r.splitCount = 0;
+                
+                let projElement = document.getElementById(`proj-${r.id}`);
+                if (projElement) {
+                    projElement.innerText = "Proj: --:--";
+                    projElement.style.color = "var(--accent)";
+                    projElement.style.backgroundColor = "rgba(16, 185, 129, 0.1)";
+                }
+                
+                let btn = document.getElementById(`btn-split-${r.id}`);
+                if(btn) btn.disabled = true;
+            });
+            
+            buildAllGrids(); 
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Nouvelle fonction CSV : Sépare chaque coureur dans ses propres colonnes
+        function exportCSV() {
+            if (recordedSplits.length === 0) {
+                alert("Aucun tour enregistré.");
+                return;
+            }
+            
+            // Trouve tous les coureurs qui ont enregistré au moins un split
+            let activeRunners = runners.filter(r => r.splitCount > 0);
+            if (activeRunners.length === 0) activeRunners = runners;
+
+            // Trouve le nombre maximum de splits parmi tous les coureurs
+            let maxSplits = Math.max(...activeRunners.map(r => r.splitCount));
+
+            let csvContent = "\uFEFF"; // Force Excel à lire en UTF-8
+
+            // Construction de la ligne d'en-tête (Ligne 1)
+            let headers = ["Split #"];
+            activeRunners.forEach(r => {
+                headers.push(`"${r.name} - Dist. (m)"`);
+                headers.push(`"${r.name} - Temps Tour"`);
+                headers.push(`"${r.name} - Allure"`);
+                headers.push(`"${r.name} - Temps Total"`);
+            });
+            csvContent += headers.join(",") + "\n";
+
+            // Construction des données ligne par ligne (Ligne 2 à maxSplits)
+            for (let i = 1; i <= maxSplits; i++) {
+                let row = [i]; // Numéro du split
+                
+                activeRunners.forEach(r => {
+                    // Cherche si ce coureur a enregistré un split à ce numéro "i"
+                    let split = recordedSplits.find(s => s.runnerName === r.name && s.lap === i);
+                    
+                    if (split) {
+                        row.push(split.distance);
+                        row.push(split.lapTime);
+                        row.push(split.pace);
+                        row.push(split.totalTime);
+                    } else {
+                        // S'il n'a pas (encore) fait ce split, on laisse les cellules vides
+                        row.push("");
+                        row.push("");
+                        row.push("");
+                        row.push("");
+                    }
+                });
+                
+                csvContent += row.join(",") + "\n";
+            }
+
+            // Génération et téléchargement
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            
+            let date = new Date().toISOString().split('T')[0];
+            link.setAttribute("download", `splits_equipe_colonnes_${date}.csv`);
+            
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        addRunner();
+    </script>
+</body>
+</html>
