@@ -47,6 +47,7 @@
         #display { 
             font-size: 4.2em; 
             font-weight: 800; 
+            font-family: "Consolas", monospace;
             font-variant-numeric: tabular-nums; 
             margin: 0; 
             color: var(--text-main);
@@ -348,7 +349,7 @@
             let paceDecimal = timeMin / distanceKm;
             if (paceDecimal > 20) return { text: "---", html: `---` }; 
             
-            let totalSeconds = Math.round(paceDecimal * 60); 
+            let totalSeconds = Math.floor(paceDecimal * 60); 
             let paceMin = Math.floor(totalSeconds / 60);
             let paceSec = totalSeconds % 60;
             let paceString = `${paceMin}:${paceSec.toString().padStart(2, '0')}`;
