@@ -208,7 +208,7 @@
         .mini-card.completed {
             background-color: var(--completed-bg);
             border-color: #1e293b;
-            opacity: 0.35;
+            opacity: 0.45; /* Légèrement plus visible pour continuer à lire les chiffres */
         }
         
         .mini-card.next-target {
@@ -275,6 +275,8 @@
             <option value="2000">Obj: 2000m</option>
             <option value="3000">Obj: 3000m</option>
             <option value="5000">Obj: 5000m</option>
+            <option value="10000">Obj: 10000m</option>
+            <option value="infinity">Illimité</option>
         </select>
     </div>
     
@@ -426,22 +428,12 @@
         }
 
         function buildAllGrids() {
-            let target = parseInt(targetDistConfig.value);
             cachedPaceStrings = {};
-            
             runners.forEach(r => {
                 let gridContainer = document.getElementById(`grid-${r.id}`);
-                if (!gridContainer) return;
-                
+                if (gridContainer) {
                 gridContainer.innerHTML = '';
-                for(let dist = 200; dist <= target; dist += 200) {
-                    gridContainer.innerHTML += `
-                        <div class="mini-card" id="card-${r.id}-${dist}">
-                            <span class="m-dist">${dist}</span>
-                            <span class="m-pace" id="pace-${r.id}-${dist}">0:00</span>
-                        </div>
-                    `;
-                }
+                    ensureGridCapacity(r);
                 updateGridVisuals(r.id);
             });
         }
@@ -469,8 +461,6 @@
         }
 
         function updateAllPaces(timeMs) {
-            let target = parseInt(targetDistConfig.value);
-            
             runners.forEach(r => {
                 for(let dist = 200; dist <= target; dist += 200) {
                     if (dist > r.distanceCovered) {
@@ -574,6 +564,7 @@
                 totalTime: formatTime(currentTotalTime)
             });
             
+            ensureGridCapacity(r);
             updateProjection(r.id, currentTotalTime, r.distanceCovered);
             updateGridVisuals(r.id); 
 
@@ -636,12 +627,9 @@
             let activeRunners = runners.filter(r => r.splitCount > 0);
             if (activeRunners.length === 0) activeRunners = runners;
 
-            // Trouve le nombre maximum de splits parmi tous les coureurs
             let maxSplits = Math.max(...activeRunners.map(r => r.splitCount));
+            let csvContent = "\uFEFF";
 
-            let csvContent = "\uFEFF"; // Force Excel à lire en UTF-8
-
-            // Construction de la ligne d'en-tête (Ligne 1)
             let headers = ["Split #"];
             activeRunners.forEach(r => {
                 headers.push(`"${r.name} - Dist. (m)"`);
@@ -651,28 +639,19 @@
             });
             csvContent += headers.join(",") + "\n";
 
-            // Construction des données ligne par ligne (Ligne 2 à maxSplits)
             for (let i = 1; i <= maxSplits; i++) {
-                let row = [i]; // Numéro du split
-                
+                let row = [i];
                 activeRunners.forEach(r => {
-                    // Cherche si ce coureur a enregistré un split à ce numéro "i"
                     let split = recordedSplits.find(s => s.runnerName === r.name && s.lap === i);
-                    
                     if (split) {
                         row.push(split.distance);
                         row.push(split.lapTime);
                         row.push(split.pace);
                         row.push(split.totalTime);
                     } else {
-                        // S'il n'a pas (encore) fait ce split, on laisse les cellules vides
-                        row.push("");
-                        row.push("");
-                        row.push("");
-                        row.push("");
+                        row.push(""); row.push(""); row.push(""); row.push("");
                     }
                 });
-                
                 csvContent += row.join(",") + "\n";
             }
 
