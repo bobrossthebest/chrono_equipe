@@ -345,7 +345,7 @@
         }
 
         function calculatePace(timeMs, distanceMeters) {
-            if (timeMs < 3000) return { text: "---", html: `---` }; 
+            if (timeMs < 3000 || distanceMeters === 0) return { text: "---", html: `---` };
             let timeMin = timeMs / 60000;
             let distanceKm = distanceMeters / 1000;
             let paceDecimal = timeMin / distanceKm;
@@ -380,11 +380,13 @@
                 
                 let gridStyle = r.gridVisible ? "display: grid;" : "display: none;";
                 let toggleText = r.gridVisible ? "▲ Cacher Allures" : "▼ Voir Allures";
+
+                let projText = targetDistConfig.value === 'infinity' ? "Moy: --:--" : "Proj: --:--";
                 
                 card.innerHTML = `
                     <div class="runner-header">
                         <input type="text" class="runner-name" value="${r.name}" onchange="updateRunnerName(${r.id}, this.value)">
-                        <div class="runner-proj" id="proj-${r.id}">Proj: --:--</div>
+                        <div class="runner-proj" id="proj-${r.id}">${projText}</div>
                     </div>
                     <button class="split-btn" id="btn-split-${r.id}" onclick="recordSplit(${r.id})" ${isRunning ? "" : "disabled"}>
                         SPLIT
@@ -427,6 +429,36 @@
             }
         }
 
+        function ensureGridCapacity(r) {
+            let gridContainer = document.getElementById(`grid-${r.id}`);
+            if (!gridContainer) return;
+
+            let target = targetDistConfig.value === 'infinity'
+                ? r.distanceCovered + 2000
+                : parseInt(targetDistConfig.value);
+
+            let existingCards = gridContainer.querySelectorAll('.mini-card');
+            let maxDist = 0;
+            if (existingCards.length > 0) {
+                 let lastCard = existingCards[existingCards.length - 1];
+                 maxDist = parseInt(lastCard.id.split('-')[2]);
+            }
+
+            if (targetDistConfig.value !== 'infinity' && maxDist > target) {
+                gridContainer.innerHTML = '';
+                maxDist = 0;
+            }
+
+            for(let dist = maxDist + 200; dist <= target; dist += 200) {
+                gridContainer.insertAdjacentHTML('beforeend', `
+                    <div class="mini-card" id="card-${r.id}-${dist}">
+                        <span class="m-dist">${dist}</span>
+                        <span class="m-pace" id="pace-${r.id}-${dist}">0:00</span>
+                    </div>
+                `);
+            }
+        }
+
         function buildAllGrids() {
             cachedPaceStrings = {};
             runners.forEach(r => {
@@ -435,6 +467,8 @@
                 gridContainer.innerHTML = '';
                     ensureGridCapacity(r);
                 updateGridVisuals(r.id);
+                    updateProjection(r.id, elapsedTime, r.distanceCovered);
+                }
             });
         }
 
@@ -442,7 +476,10 @@
             let r = runners.find(x => x.id === runnerId);
             if (!r) return;
             
-            let target = parseInt(targetDistConfig.value);
+            let target = targetDistConfig.value === 'infinity'
+                ? r.distanceCovered + 2000
+                : parseInt(targetDistConfig.value);
+
             let splitDist = parseInt(splitDistConfig.value);
             let nextTargetDist = r.distanceCovered + splitDist;
 
@@ -462,8 +499,14 @@
 
         function updateAllPaces(timeMs) {
             runners.forEach(r => {
+                let target = targetDistConfig.value === 'infinity'
+                    ? r.distanceCovered + 2000
+                    : parseInt(targetDistConfig.value);
+
                 for(let dist = 200; dist <= target; dist += 200) {
-                    if (dist > r.distanceCovered) {
+                    // C'est ici que la magie opère !
+                    // J'ai enlevé la restriction "if (dist > r.distanceCovered)"
+                    // Maintenant, TOUTES les cases (même les anciennes) continuent de se mettre à jour en continu.
                         let newHtml = calculatePace(timeMs, dist).html;
                         let cacheKey = `${r.id}-${dist}`;
                         
@@ -475,16 +518,27 @@
                             }
                         }
                     }
-                }
             });
         }
 
         function updateProjection(runnerId, currentTotalTime, currentTotalDist) {
             let r = runners.find(x => x.id === runnerId);
-            let targetDist = parseInt(targetDistConfig.value);
             let projElement = document.getElementById(`proj-${r.id}`);
-            
             if (!projElement) return;
+
+            if (targetDistConfig.value === 'infinity') {
+                if (currentTotalDist === 0) {
+                    projElement.innerText = "Moy: --:--";
+                } else {
+                    let avgPace = calculatePace(currentTotalTime, currentTotalDist).text;
+                    projElement.innerText = `Moy: ${avgPace}`;
+                }
+                projElement.style.color = "var(--text-main)";
+                projElement.style.backgroundColor = "rgba(16, 185, 129, 0.2)";
+                return;
+            }
+
+            let targetDist = parseInt(targetDistConfig.value);
 
             if (currentTotalDist >= targetDist) {
                 projElement.innerText = "Terminé";
@@ -603,7 +657,8 @@
                 
                 let projElement = document.getElementById(`proj-${r.id}`);
                 if (projElement) {
-                    projElement.innerText = "Proj: --:--";
+                    let projText = targetDistConfig.value === 'infinity' ? "Moy: --:--" : "Proj: --:--";
+                    projElement.innerText = projText;
                     projElement.style.color = "var(--accent)";
                     projElement.style.backgroundColor = "rgba(16, 185, 129, 0.1)";
                 }
